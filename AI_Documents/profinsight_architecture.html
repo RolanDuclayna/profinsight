@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ProfInsight — Architecture Diagram</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:#07090f;--surface:#0e1220;--card:#131828;--border:#1e2840;
+    --a1:#4f8fff;--a2:#7c5cfc;--a3:#2ee8b6;--a4:#ff6b6b;--a5:#ffc047;
+    --txt:#e8ecf5;--muted:#7a8aaa;
+    --mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--txt);font-family:var(--sans);min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");background-size:180px;pointer-events:none;z-index:9999;}
+
+  header{padding:48px 56px 0;display:flex;flex-direction:column;gap:6px;}
+  .logo-row{display:flex;align-items:center;gap:14px;}
+  .logo-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--a1),var(--a2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:16px;font-weight:700;color:#fff;box-shadow:0 0 24px #4f8fff44;}
+  .logo-name{font-family:var(--mono);font-size:22px;font-weight:700;letter-spacing:-0.5px;background:linear-gradient(90deg,var(--a1) 0%,var(--a3) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .diagram-title{font-size:12px;font-weight:500;color:var(--muted);letter-spacing:2.5px;text-transform:uppercase;margin-left:52px;margin-top:-2px;}
+
+  .sec-label{font-family:var(--mono);font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);padding:30px 56px 10px;}
+
+  /* actors */
+  .actors{display:flex;flex-wrap:wrap;gap:10px;padding:0 56px;}
+  .actor{display:flex;align-items:center;gap:10px;background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:10px 16px;}
+  .actor-icon{font-size:18px;}
+  .actor-name{font-weight:600;font-size:12px;}
+  .actor-sub{font-size:10px;color:var(--muted);margin-top:1px;}
+
+  /* canvas */
+  .canvas{padding:0 56px 80px;display:flex;flex-direction:column;}
+
+  /* layer */
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  .layer{animation:fadeUp .5s ease both;}
+  .layer:nth-child(1){animation-delay:.05s}.layer:nth-child(2){animation-delay:.12s}
+  .layer:nth-child(3){animation-delay:.19s}.layer:nth-child(4){animation-delay:.26s}
+  .layer:nth-child(5){animation-delay:.33s}.layer:nth-child(6){animation-delay:.40s}
+
+  .layer-inner{border:1.5px solid var(--border);border-radius:16px;overflow:hidden;background:var(--card);}
+  .layer-hdr{display:flex;align-items:center;gap:10px;padding:13px 20px;border-bottom:1.5px solid var(--border);}
+  .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .lbl{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:2.2px;text-transform:uppercase;}
+  .tag{margin-left:auto;font-family:var(--mono);font-size:9px;padding:3px 9px;border-radius:4px;border:1px solid currentColor;opacity:.5;}
+
+  .cards{display:flex;flex-wrap:wrap;gap:1.5px;padding:14px;background:var(--surface);}
+  .card{flex:1 1 170px;background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px 15px;transition:transform .2s,box-shadow .2s;cursor:default;}
+  .card:hover{transform:translateY(-2px);box-shadow:0 8px 28px #00000055;}
+  .ci{font-size:20px;margin-bottom:8px;}
+  .ct{font-weight:600;font-size:13px;line-height:1.3;margin-bottom:5px;}
+  .cd{font-size:11px;color:var(--muted);line-height:1.55;}
+  .pills{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;}
+  .pill{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:3px;background:#ffffff0d;color:var(--muted);border:1px solid var(--border);}
+  .hi{background:#4f8fff14;color:var(--a1);border-color:#4f8fff33;}
+
+  /* connector */
+  .conn{display:flex;justify-content:center;align-items:center;height:30px;}
+  .conn svg{display:block;}
+
+  /* colour themes */
+  .b{--c:var(--a1);--c33:#4f8fff33;--c0d:#4f8fff0d;}
+  .v{--c:var(--a2);--c33:#7c5cfc33;--c0d:#7c5cfc0d;}
+  .t{--c:var(--a3);--c33:#2ee8b633;--c0d:#2ee8b60d;}
+  .g{--c:var(--a5);--c33:#ffc04733;--c0d:#ffc0470d;}
+  .r{--c:var(--a4);--c33:#ff6b6b33;--c0d:#ff6b6b0d;}
+  .s{--c:#8899cc;--c33:#8899cc33;--c0d:#8899cc0d;}
+
+  .layer-inner.b{border-color:var(--c33);}
+  .layer-inner.v{border-color:var(--c33);}
+  .layer-inner.t{border-color:var(--c33);}
+  .layer-inner.g{border-color:var(--c33);}
+  .layer-inner.r{border-color:var(--c33);}
+  .layer-inner.s{border-color:var(--c33);}
+
+  .layer-hdr.b,.layer-hdr.v,.layer-hdr.t,.layer-hdr.g,.layer-hdr.r,.layer-hdr.s{background:var(--c0d);}
+  .dot.b,.dot.v,.dot.t,.dot.g,.dot.r,.dot.s{background:var(--c);box-shadow:0 0 8px var(--c);}
+  .lbl.b,.lbl.v,.lbl.t,.lbl.g,.lbl.r,.lbl.s{color:var(--c);}
+  .tag.b,.tag.v,.tag.t,.tag.g,.tag.r,.tag.s{color:var(--c);border-color:var(--c33);}
+  .card.b:hover{border-color:var(--c33);}
+  .card.v:hover{border-color:var(--c33);}
+  .card.t:hover{border-color:var(--c33);}
+  .card.g:hover{border-color:var(--c33);}
+  .card.r:hover{border-color:var(--c33);}
+  .card.s:hover{border-color:var(--c33);}
+
+  /* legend & badges */
+  .legend{display:flex;flex-wrap:wrap;gap:14px;padding:0 56px;}
+  .li{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted);}
+  .ld{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .badges{display:flex;flex-wrap:wrap;gap:8px;padding:0 56px 64px;}
+  .badge{display:flex;align-items:center;gap:6px;background:var(--card);border:1.5px solid var(--border);border-radius:8px;padding:6px 13px;font-size:11px;color:var(--muted);}
+  .bd{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-row">
+    <div class="logo-icon">PI</div>
+    <span class="logo-name">ProfInsight</span>
+  </div>
+  <div class="diagram-title">System Architecture — Layered View</div>
+</header>
+
+<div class="sec-label">Actors &amp; External Systems</div>
+<div class="actors">
+  <div class="actor"><div class="actor-icon">🎓</div><div><div class="actor-name">Student</div><div class="actor-sub">Primary user — course registration</div></div></div>
+  <div class="actor"><div class="actor-icon">🧑‍💼</div><div><div class="actor-name">Academic Advisor</div><div class="actor-sub">Views insights &amp; comparisons</div></div></div>
+  <div class="actor"><div class="actor-icon">🏛️</div><div><div class="actor-name">University Registration System</div><div class="actor-sub">DOM source — course &amp; section data</div></div></div>
+  <div class="actor"><div class="actor-icon">⭐</div><div><div class="actor-name">External Rating Sources</div><div class="actor-sub">RateMyProfessors · Reddit · CourseRank</div></div></div>
+  <div class="actor"><div class="actor-icon">🔔</div><div><div class="actor-name">Notification Service</div><div class="actor-sub">New course / new review alerts</div></div></div>
+  <div class="actor"><div class="actor-icon">🛡️</div><div><div class="actor-name">Moderation &amp; Fraud Detection</div><div class="actor-sub">AI anomaly — review integrity</div></div></div>
+</div>
+
+<div class="sec-label">Functional Architecture Layers</div>
+<div class="canvas">
+
+  <!-- LAYER 1 -->
+  <div class="layer">
+    <div class="layer-inner b">
+      <div class="layer-hdr b">
+        <div class="dot b"></div>
+        <span class="lbl b">Layer 1 — Browser Extension · Presentation</span>
+        <span class="tag b">Chrome MV3 · TypeScript · React · Tailwind CSS · HTML</span>
+      </div>
+      <div class="cards">
+        <div class="card b">
+          <div class="ci">🧩</div><div class="ct">Content Script</div>
+          <div class="cd">Injected into university registration pages. Uses MutationObserver to detect course/section DOM changes in real-time. Extracts professor names, course codes, section numbers (FR1, FR2).</div>
+          <div class="pills"><span class="pill hi">TypeScript</span><span class="pill">MutationObserver</span><span class="pill">DOM Parser</span></div>
+        </div>
+        <div class="card b">
+          <div class="ci">📋</div><div class="ct">Overlay Card UI</div>
+          <div class="cd">Rich professor profile card — overall rating, difficulty, grade charts, AI summary, strengths/weaknesses — rendered inline without leaving the registration page (FR4, FR5, DSR10).</div>
+          <div class="pills"><span class="pill hi">React</span><span class="pill hi">Tailwind CSS</span><span class="pill">HTML</span></div>
+        </div>
+        <div class="card b">
+          <div class="ci">⚖️</div><div class="ct">Section Comparison View</div>
+          <div class="cd">Side-by-side comparison of multiple sections for the same course. Students identify best-fit by rating, grading, workload, or teaching style (FR7, DSR4).</div>
+          <div class="pills"><span class="pill hi">React</span><span class="pill hi">Tailwind CSS</span><span class="pill">Recharts</span></div>
+        </div>
+        <div class="card b">
+          <div class="ci">🗓️</div><div class="ct">Schedule Builder</div>
+          <div class="cd">Multi-course semester planner evaluates full schedule against workload balance, grade difficulty, and professor quality. Returns ranked combinations (FR9, DSR7).</div>
+          <div class="pills"><span class="pill hi">React</span><span class="pill hi">TypeScript</span><span class="pill">Tailwind CSS</span></div>
+        </div>
+        <div class="card b">
+          <div class="ci">⚙️</div><div class="ct">Preferences &amp; Profile</div>
+          <div class="cd">Students set workload, teaching style, grading strictness, and attendance priorities. Drives personalised match scores and recommendations shown in overlays (FR8, DSR6).</div>
+          <div class="pills"><span class="pill hi">React</span><span class="pill">Local State</span><span class="pill">Tailwind CSS</span></div>
+        </div>
+        <div class="card b">
+          <div class="ci">✍️</div><div class="ct">Review Submission</div>
+          <div class="cd">Students submit ratings and reviews via extension UI. Community upvote system surfaces most helpful reviews; filter by major, year, or cohort (FR10, DSR3).</div>
+          <div class="pills"><span class="pill hi">React</span><span class="pill hi">TypeScript</span><span class="pill">Tailwind CSS</span></div>
+        </div>
+        <div class="card b">
+          <div class="ci">🔔</div><div class="ct">Follow &amp; Notifications</div>
+          <div class="cd">Users follow professors and receive push notifications when a followed professor teaches a new course or receives new reviews (FR11).</div>
+          <div class="pills"><span class="pill hi">Chrome API</span><span class="pill">ServiceWorker</span><span class="pill">MV3</span></div>
+        </div>
+        <div class="card b">
+          <div class="ci">🔧</div><div class="ct">Background Service Worker</div>
+          <div class="cd">MV3 service worker manages message passing between content script, popup, and backend API. Handles auth tokens, request queuing, and graceful fallback messaging (NFR5, NFR8, NFR10).</div>
+          <div class="pills"><span class="pill hi">MV3</span><span class="pill">TypeScript</span><span class="pill">Chrome API</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="conn"><svg width="40" height="30" viewBox="0 0 40 30"><line x1="20" y1="0" x2="20" y2="20" stroke="#1e2840" stroke-width="1.5" stroke-dasharray="4 3"/><polygon points="20,26 15,17 25,17" fill="#1e2840"/></svg></div>
+
+  <!-- LAYER 2 -->
+  <div class="layer">
+    <div class="layer-inner v">
+      <div class="layer-hdr v">
+        <div class="dot v"></div>
+        <span class="lbl v">Layer 2 — API Gateway &amp; Auth</span>
+        <span class="tag v">Node.js · Express · OAuth 2.0 · TLS 1.3 · Redis</span>
+      </div>
+      <div class="cards">
+        <div class="card v">
+          <div class="ci">🚪</div><div class="ct">REST API Gateway</div>
+          <div class="cd">Single entry point for all extension requests. Routes to internal services, enforces rate limiting, request validation, and CORS policy (NFR1, NFR4).</div>
+          <div class="pills"><span class="pill hi">Node.js</span><span class="pill hi">Express</span><span class="pill">TypeScript</span></div>
+        </div>
+        <div class="card v">
+          <div class="ci">🔐</div><div class="ct">Authentication &amp; Session</div>
+          <div class="cd">OAuth 2.0 for user login. JWT-based session tokens. All traffic over TLS 1.3. Minimal permissions principle for extension (NFR5, NFR6, DSR9).</div>
+          <div class="pills"><span class="pill hi">OAuth 2.0</span><span class="pill">JWT</span><span class="pill">TLS 1.3</span></div>
+        </div>
+        <div class="card v">
+          <div class="ci">⚡</div><div class="ct">Response Cache Layer</div>
+          <div class="cd">Redis-backed cache for hot professor profiles and rating aggregates. Ensures sub-2s load time at 95th percentile. Cache invalidation on new reviews (NFR1, NFR4).</div>
+          <div class="pills"><span class="pill hi">Redis</span><span class="pill">ElastiCache</span><span class="pill">TTL</span></div>
+        </div>
+        <div class="card v">
+          <div class="ci">🌐</div><div class="ct">WebSocket / Push Gateway</div>
+          <div class="cd">Real-time notification delivery for professor follow alerts. Interfaces with Firebase FCM for cross-device push to the Chrome extension (FR11, NFR10).</div>
+          <div class="pills"><span class="pill hi">WebSocket</span><span class="pill">Node.js</span><span class="pill">Firebase FCM</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="conn"><svg width="40" height="30" viewBox="0 0 40 30"><line x1="20" y1="0" x2="20" y2="20" stroke="#1e2840" stroke-width="1.5" stroke-dasharray="4 3"/><polygon points="20,26 15,17 25,17" fill="#1e2840"/></svg></div>
+
+  <!-- LAYER 3 -->
+  <div class="layer">
+    <div class="layer-inner t">
+      <div class="layer-hdr t">
+        <div class="dot t"></div>
+        <span class="lbl t">Layer 3 — Core Backend Services</span>
+        <span class="tag t">Node.js · Express · TypeScript · AWS</span>
+      </div>
+      <div class="cards">
+        <div class="card t">
+          <div class="ci">👨‍🏫</div><div class="ct">Professor Service</div>
+          <div class="cd">Manages professor profiles, aggregated ratings, grade distributions, and teaching attribute scores. Core entity for all lookup and comparison flows (FR3, FR5, DSR2).</div>
+          <div class="pills"><span class="pill hi">Node.js</span><span class="pill">PostgreSQL</span><span class="pill">TypeScript</span></div>
+        </div>
+        <div class="card t">
+          <div class="ci">📚</div><div class="ct">Course &amp; Section Service</div>
+          <div class="cd">Stores course codes, section numbers, department, term, and prerequisite relationships extracted from university pages (FR2, DSR2, DSR4).</div>
+          <div class="pills"><span class="pill hi">Node.js</span><span class="pill">PostgreSQL</span><span class="pill">TypeScript</span></div>
+        </div>
+        <div class="card t">
+          <div class="ci">🎯</div><div class="ct">Recommendation Service</div>
+          <div class="cd">Generates personalised professor match scores from student preferences, peer cohort data, and teaching style classifications. Hybrid collaborative + content filtering (FR7, FR8, DSR6).</div>
+          <div class="pills"><span class="pill hi">Python</span><span class="pill">ML Models</span><span class="pill">Node.js API</span></div>
+        </div>
+        <div class="card t">
+          <div class="ci">📝</div><div class="ct">Review &amp; Rating Service</div>
+          <div class="cd">Handles review submission, community upvote logic, and demographic filtering. Routes through fraud detection before publishing to aggregate scores (FR10, FR12, DSR8).</div>
+          <div class="pills"><span class="pill hi">Node.js</span><span class="pill">MongoDB</span><span class="pill">TypeScript</span></div>
+        </div>
+        <div class="card t">
+          <div class="ci">📅</div><div class="ct">Schedule Planning Service</div>
+          <div class="cd">Evaluates full semester schedule combinations against workload balance, grade difficulty, and professor quality. Returns ranked schedule options (FR9, DSR7).</div>
+          <div class="pills"><span class="pill hi">TypeScript</span><span class="pill">Node.js</span><span class="pill">Optimisation</span></div>
+        </div>
+        <div class="card t">
+          <div class="ci">👤</div><div class="ct">User &amp; Preference Service</div>
+          <div class="cd">Manages student profiles, saved preferences, and follow lists. Encrypts PII at rest. Stores only required fields per FERPA / privacy policy (NFR6, DSR6, DSR9).</div>
+          <div class="pills"><span class="pill hi">Node.js</span><span class="pill">PostgreSQL</span><span class="pill">AES-256</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="conn"><svg width="40" height="30" viewBox="0 0 40 30"><line x1="20" y1="0" x2="20" y2="20" stroke="#1e2840" stroke-width="1.5" stroke-dasharray="4 3"/><polygon points="20,26 15,17 25,17" fill="#1e2840"/></svg></div>
+
+  <!-- LAYER 4 -->
+  <div class="layer">
+    <div class="layer-inner g">
+      <div class="layer-hdr g">
+        <div class="dot g"></div>
+        <span class="lbl g">Layer 4 — AI / ML &amp; Data Intelligence</span>
+        <span class="tag g">Python · TensorFlow · PyTorch · BERT · MLflow · Airflow</span>
+      </div>
+      <div class="cards">
+        <div class="card g">
+          <div class="ci">🤖</div><div class="ct">NLP Review Analyser</div>
+          <div class="cd">BERT transformers parse review text to extract teaching style summaries, sentiment, named entities, and topic clusters (clarity, fairness, workload). Generates AI summary cards (FR6, DSR3, DSR5).</div>
+          <div class="pills"><span class="pill hi">Python</span><span class="pill hi">BERT</span><span class="pill">PyTorch</span></div>
+        </div>
+        <div class="card g">
+          <div class="ci">📊</div><div class="ct">Predictive Grade Modelling</div>
+          <div class="cd">Regression models estimate expected grade outcomes using professor grade history, course level, and student GPA in prerequisites. Continuously refined with anonymised outcomes data (DSR5, DSR6).</div>
+          <div class="pills"><span class="pill hi">Python</span><span class="pill">TensorFlow</span><span class="pill">Scikit-learn</span></div>
+        </div>
+        <div class="card g">
+          <div class="ci">🕵️</div><div class="ct">Fraud &amp; Anomaly Detection</div>
+          <div class="cd">Monitors for review bombing, duplicate text, coordinated campaigns, and suspicious rating spikes. Flags submissions for human moderation before score inclusion (FR12, DSR8).</div>
+          <div class="pills"><span class="pill hi">Python</span><span class="pill">Isolation Forest</span><span class="pill">NLP</span></div>
+        </div>
+        <div class="card g">
+          <div class="ci">🔍</div><div class="ct">Teaching Style Classifier</div>
+          <div class="cd">Multi-label classifier tags professors across lecture style, grading philosophy, accessibility, and engagement dimensions. Powers personalised student-professor matching (DSR3, DSR6).</div>
+          <div class="pills"><span class="pill hi">Python</span><span class="pill">PyTorch</span><span class="pill">MLflow</span></div>
+        </div>
+        <div class="card g">
+          <div class="ci">🤝</div><div class="ct">Recommendation Engine</div>
+          <div class="cd">Hybrid collaborative + content-based filtering. Identifies peer cohorts by major, year, and academic profile. Combines with teaching style match for personalised section rankings (FR7, DSR6).</div>
+          <div class="pills"><span class="pill hi">Python</span><span class="pill">Collab Filter</span><span class="pill">MLflow</span></div>
+        </div>
+        <div class="card g">
+          <div class="ci">🔄</div><div class="ct">Model Training &amp; Monitoring</div>
+          <div class="cd">MLflow tracks versions and performance metrics. A/B testing evaluates algorithm variants. Active learning retrains on feedback. Auto-rollback on accuracy degradation (NFR2).</div>
+          <div class="pills"><span class="pill hi">MLflow</span><span class="pill">Airflow</span><span class="pill">SageMaker</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="conn"><svg width="40" height="30" viewBox="0 0 40 30"><line x1="20" y1="0" x2="20" y2="20" stroke="#1e2840" stroke-width="1.5" stroke-dasharray="4 3"/><polygon points="20,26 15,17 25,17" fill="#1e2840"/></svg></div>
+
+  <!-- LAYER 5 -->
+  <div class="layer">
+    <div class="layer-inner r">
+      <div class="layer-hdr r">
+        <div class="dot r"></div>
+        <span class="lbl r">Layer 5 — Data &amp; Persistence</span>
+        <span class="tag r">PostgreSQL · MongoDB · Redis · Snowflake · Kafka</span>
+      </div>
+      <div class="cards">
+        <div class="card r">
+          <div class="ci">🗄️</div><div class="ct">PostgreSQL — Relational DB</div>
+          <div class="cd">Primary store for structured entities: professors, courses, sections, departments, terms, prerequisites, and user profiles. PII columns encrypted at rest (NFR6, DSR2, DSR9).</div>
+          <div class="pills"><span class="pill hi">PostgreSQL</span><span class="pill">AES-256</span><span class="pill">RLS</span></div>
+        </div>
+        <div class="card r">
+          <div class="ci">📦</div><div class="ct">MongoDB — Review Store</div>
+          <div class="cd">Stores unstructured review text, upvote counts, moderation flags, and user-generated content. Flexible schema supports rich review metadata and state fields (FR10, DSR8).</div>
+          <div class="pills"><span class="pill hi">MongoDB</span><span class="pill">Atlas</span><span class="pill">Full-text Index</span></div>
+        </div>
+        <div class="card r">
+          <div class="ci">⚡</div><div class="ct">Redis — Cache &amp; Sessions</div>
+          <div class="cd">In-memory cache for hot professor profiles, rating aggregates, and API responses. Session token store. Cuts DB load during 10k+ concurrent registration spikes (NFR1, NFR4).</div>
+          <div class="pills"><span class="pill hi">Redis</span><span class="pill">ElastiCache</span><span class="pill">TTL</span></div>
+        </div>
+        <div class="card r">
+          <div class="ci">🏔️</div><div class="ct">Snowflake — Data Warehouse</div>
+          <div class="cd">Historical analytics, grade distribution trends, professor rating trajectories over time. Powers ML training datasets and institutional reporting (DSR5, NFR2).</div>
+          <div class="pills"><span class="pill hi">Snowflake</span><span class="pill">SQL</span><span class="pill">dbt</span></div>
+        </div>
+        <div class="card r">
+          <div class="ci">🌊</div><div class="ct">Apache Kafka — Event Streaming</div>
+          <div class="cd">Real-time event bus for new review submissions, rating updates, follow alerts, and fraud signals. Decouples services for resilience and graceful degradation (NFR3, NFR10, FR11).</div>
+          <div class="pills"><span class="pill hi">Kafka</span><span class="pill">AWS MSK</span><span class="pill">Consumer Groups</span></div>
+        </div>
+        <div class="card r">
+          <div class="ci">🔒</div><div class="ct">Encryption &amp; Privacy Controls</div>
+          <div class="cd">PII encrypted at rest with AES-256. Data anonymised before ML training. FERPA compliance for institutional data partnerships. Regular security audits (NFR5, NFR6, DSR9).</div>
+          <div class="pills"><span class="pill hi">AES-256</span><span class="pill">AWS KMS</span><span class="pill">FERPA</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="conn"><svg width="40" height="30" viewBox="0 0 40 30"><line x1="20" y1="0" x2="20" y2="20" stroke="#1e2840" stroke-width="1.5" stroke-dasharray="4 3"/><polygon points="20,26 15,17 25,17" fill="#1e2840"/></svg></div>
+
+  <!-- LAYER 6 -->
+  <div class="layer">
+    <div class="layer-inner s">
+      <div class="layer-hdr s">
+        <div class="dot s"></div>
+        <span class="lbl s">Layer 6 — Infrastructure, DevOps &amp; Data Pipeline</span>
+        <span class="tag s">AWS · Docker · Kubernetes · Terraform · Airflow · Selenium</span>
+      </div>
+      <div class="cards">
+        <div class="card s">
+          <div class="ci">☁️</div><div class="ct">AWS Auto-Scaling</div>
+          <div class="cd">EC2 auto-scaling groups handle 10k+ concurrent users during registration peaks. ELB distributes API traffic. CloudWatch monitors 99.5% uptime SLA (NFR3, NFR4).</div>
+          <div class="pills"><span class="pill">AWS EC2</span><span class="pill">ELB</span><span class="pill">CloudWatch</span></div>
+        </div>
+        <div class="card s">
+          <div class="ci">🕷️</div><div class="ct">ETL / Scraping Pipeline</div>
+          <div class="cd">Apache Airflow orchestrates daily jobs. BeautifulSoup + Selenium harvest ratings from RateMyProfessors, Reddit, and CourseRank. University FOIA data ingested periodically (FR3).</div>
+          <div class="pills"><span class="pill">Airflow</span><span class="pill">BeautifulSoup</span><span class="pill">Selenium</span></div>
+        </div>
+        <div class="card s">
+          <div class="ci">🐳</div><div class="ct">Containerisation &amp; IaC</div>
+          <div class="cd">All services containerised with Docker. Kubernetes orchestrates deployments and health checks. Terraform manages infrastructure as code for repeatable provisioning (NFR9).</div>
+          <div class="pills"><span class="pill">Docker</span><span class="pill">Kubernetes</span><span class="pill">Terraform</span></div>
+        </div>
+        <div class="card s">
+          <div class="ci">🧪</div><div class="ct">Testing &amp; QA</div>
+          <div class="cd">Automated tests verify 95%+ extraction accuracy, 80%+ usability pass rate, and 100% graceful fallback on parse failure. Load tests confirm 2s p95 latency at 10k users (NFR1–NFR10).</div>
+          <div class="pills"><span class="pill">Jest</span><span class="pill">Playwright</span><span class="pill">k6</span></div>
+        </div>
+        <div class="card s">
+          <div class="ci">🚀</div><div class="ct">CI / CD Pipeline</div>
+          <div class="cd">GitHub Actions runs lint, test, and build on every PR. Automated Chrome extension packaging and submission. Blue-green deployments with rollback (NFR8, NFR9).</div>
+          <div class="pills"><span class="pill">GitHub Actions</span><span class="pill">Blue-Green</span><span class="pill">ArgoCD</span></div>
+        </div>
+        <div class="card s">
+          <div class="ci">📈</div><div class="ct">Observability &amp; Alerting</div>
+          <div class="cd">OpenTelemetry distributed tracing. Centralised logging in CloudWatch. Grafana dashboards. PagerDuty alerts on API latency, error rate, and fraud spikes (NFR3, NFR10).</div>
+          <div class="pills"><span class="pill">OpenTelemetry</span><span class="pill">Grafana</span><span class="pill">PagerDuty</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /canvas -->
+
+<div class="sec-label">Layer Legend</div>
+<div class="legend" style="padding-bottom:20px;">
+  <div class="li"><div class="ld" style="background:var(--a1);box-shadow:0 0 6px var(--a1)"></div>Layer 1 — Browser Extension (Presentation)</div>
+  <div class="li"><div class="ld" style="background:var(--a2);box-shadow:0 0 6px var(--a2)"></div>Layer 2 — API Gateway &amp; Auth</div>
+  <div class="li"><div class="ld" style="background:var(--a3);box-shadow:0 0 6px var(--a3)"></div>Layer 3 — Core Backend Services</div>
+  <div class="li"><div class="ld" style="background:var(--a5);box-shadow:0 0 6px var(--a5)"></div>Layer 4 — AI / ML &amp; Data Intelligence</div>
+  <div class="li"><div class="ld" style="background:var(--a4);box-shadow:0 0 6px var(--a4)"></div>Layer 5 — Data &amp; Persistence</div>
+  <div class="li"><div class="ld" style="background:#8899cc;box-shadow:0 0 6px #8899cc"></div>Layer 6 — Infrastructure, DevOps &amp; Data Pipeline</div>
+</div>
+
+<div class="sec-label">Non-Functional Requirements Coverage</div>
+<div class="badges">
+  <div class="badge"><div class="bd" style="background:var(--a1)"></div>NFR1 · &lt;2s profile load · 95th pct</div>
+  <div class="badge"><div class="bd" style="background:var(--a1)"></div>NFR2 · 95%+ extraction accuracy</div>
+  <div class="badge"><div class="bd" style="background:var(--a3)"></div>NFR3 · 99.5% monthly uptime</div>
+  <div class="badge"><div class="bd" style="background:var(--a3)"></div>NFR4 · 10k concurrent users · &lt;2s p95</div>
+  <div class="badge"><div class="bd" style="background:var(--a4)"></div>NFR5 · TLS 1.3 · zero critical vulns</div>
+  <div class="badge"><div class="bd" style="background:var(--a4)"></div>NFR6 · PII encrypted at rest</div>
+  <div class="badge"><div class="bd" style="background:var(--a5)"></div>NFR7 · 80%+ usability pass rate ≤3 min</div>
+  <div class="badge"><div class="bd" style="background:var(--a5)"></div>NFR8 · Chrome MV3 · all target pages</div>
+  <div class="badge"><div class="bd" style="background:#8899cc"></div>NFR9 · New university in ≤8 dev hrs</div>
+  <div class="badge"><div class="bd" style="background:#8899cc"></div>NFR10 · Graceful fallback · 100% of cases</div>
+</div>
+
+</body>
+</html>
