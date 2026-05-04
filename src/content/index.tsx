@@ -2,6 +2,7 @@ import type { MouseEvent as ReactMouseEvent } from "react";
 import ReactDOM from "react-dom/client";
 import HoverCard from "../components/HoverCard";
 import { professorData, type ProfessorInfo } from "./mockData";
+import { fetchProfessorInfo } from "./apiClient";
 import "./content.css";
 
 type ActiveCard = {
@@ -135,9 +136,18 @@ function shouldSkipNode(parent: HTMLElement | null): boolean {
   return false;
 }
 
-function showCardForNode(node: HTMLElement): void {
+async function showCardForNode(node: HTMLElement) {
   const name = node.dataset.profinsightName ?? "";
-  const info = professorData[name];
+  let info = professorData[name];
+
+  try {
+    const apiInfo = await fetchProfessorInfo("Cal Poly Pomona", name);
+    if (apiInfo) {
+      info = apiInfo;
+    }
+  } catch (error) {
+    console.error("Failed to fetch professor info from API:", error);
+  }
 
   if (!info) {
     return;
