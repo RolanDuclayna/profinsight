@@ -5,6 +5,186 @@ import { professorData, type ProfessorInfo } from "./mockData";
 import { fetchProfessorInfo } from "./apiClient";
 import "./content.css";
 
+const INSTRUCTOR_HEADER_TEXT = "INSTRUCTOR";
+const professorInfoCache = new Map<string, ProfessorInfo | null>();
+
+function normalizeProfessorName(text: string): string {
+  return text
+    .replace(/\s+/g, " ")
+    .replace(/\([^)]*\)/g, "")
+    .trim();
+}
+
+function findInstructorColumnIndex(table: HTMLTableElement): number {
+  const rows = Array.from(table.querySelectorAll("tr"));
+
+  for (const row of rows) {
+    const cells = Array.from(row.querySelectorAll("th, td")) as HTMLElement[];
+
+    const index = cells.findIndex((cell) =>
+      cell.textContent?.trim().toUpperCase().includes(INSTRUCTOR_HEADER_TEXT)
+    );
+
+    if (index !== -1) {
+      return index;
+    }
+  }
+
+  return -1;
+}
+
+function getInstructorCells(): HTMLElement[] {
+  const cells: HTMLElement[] = [];
+  const tables = Array.from(document.querySelectorAll("table"));
+
+  for (const table of tables) {
+    const tableText = table.textContent?.toUpperCase() ?? "";
+
+    const isClassResultsTable =
+      tableText.includes("CLASS") &&
+      tableText.includes("SECTION") &&
+      tableText.includes("DAYS") &&
+      tableText.includes("INSTRUCTOR") &&
+      tableText.includes("INSTRUCTION MODE");
+
+    if (!isClassResultsTable) {
+      continue;
+    }
+
+    const rows = Array.from(table.querySelectorAll("tr"));
+    let instructorIndex = -1;
+
+    for (const row of rows) {
+      const headerCells = Array.from(row.querySelectorAll("th, td")) as HTMLElement[];
+
+      const possibleIndex = headerCells.findIndex((cell) => {
+        const text = cell.textContent?.trim().toUpperCase() ?? "";
+        return text === "INSTRUCTOR";
+      });
+
+      if (possibleIndex !== -1) {
+        instructorIndex = possibleIndex;
+        break;
+      }
+    }
+
+    if (instructorIndex === -1) {
+      continue;
+    }
+
+    for (const row of rows) {
+      const rowCells = Array.from(row.querySelectorAll("td")) as HTMLElement[];
+      const instructorCell = rowCells[instructorIndex];
+
+      if (!instructorCell) {
+        continue;
+      }
+
+      const text = instructorCell.textContent?.trim() ?? "";
+
+      if (
+        text &&
+        text.toUpperCase() !== "INSTRUCTOR" &&
+        !text.toUpperCase().includes("INSTRUCTION MODE")
+      ) {
+        cells.push(instructorCell);
+      }
+    }
+  }
+
+  return cells;
+}
+
+function extractProfessorNamesFromCell(cell: HTMLElement): string[] {
+  const rawText = cell.innerText || cell.textContent || "";
+
+  const names = rawText
+    .split(/\n|,|;|\/|\band\b/i)
+    .map(normalizeProfessorName)
+    .filter((name) => {
+      return (
+        name.length > 2 &&
+        !/staff|tba|none|instructor|room|class|section|days|times|announced|to be announced/i.test(name) &&
+        !/\d/.test(name)
+      );
+    });
+
+  return Array.from(new Set(names));
+}
+
+function markProfessorName(element: HTMLElement, names: string[]) {
+  if (element.dataset.profinsightProcessed === "true") {
+    return;
+  }
+
+  element.dataset.profinsightProcessed = "true";
+  element.classList.add("profinsight-instructor-cell");
+
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+  const textNodes: Text[] = [];
+
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+
+    if (node instanceof Text && node.textContent?.trim()) {
+      textNodes.push(node);
+    }
+  }
+
+  for (const textNode of textNodes) {
+    const text = textNode.textContent ?? "";
+    let matchedName = "";
+
+    for (const name of names) {
+      if (text.includes(name)) {
+        matchedName = name;
+        break;
+      }
+    }
+
+    if (!matchedName) {
+      continue;
+    }
+
+    const before = text.slice(0, text.indexOf(matchedName));
+    const after = text.slice(text.indexOf(matchedName) + matchedName.length);
+
+    const fragment = document.createDocumentFragment();
+
+    if (before) {
+      fragment.appendChild(document.createTextNode(before));
+    }
+
+    const span = document.createElement("span");
+    span.className = "profinsight-name";
+    span.dataset.profinsightName = matchedName;
+    span.textContent = matchedName;
+    fragment.appendChild(span);
+
+    if (after) {
+      fragment.appendChild(document.createTextNode(after));
+    }
+
+    textNode.parentNode?.replaceChild(fragment, textNode);
+  }
+}
+
+function scanForProfessorNames() {
+  const instructorCells = getInstructorCells();
+
+  for (const cell of instructorCells) {
+    if (cell.dataset.profinsightProcessed === "true") {
+    continue;
+    }
+    const names = extractProfessorNamesFromCell(cell);
+
+    if (names.length > 0) {
+      markProfessorName(cell, names);
+      bindHoverEvents(cell);
+    } 
+  }
+}
+
 type ActiveCard = {
   info: ProfessorInfo;
   x: number;
@@ -105,48 +285,25 @@ function renderCard(card: ActiveCard): void {
   );
 }
 
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function shouldSkipNode(parent: HTMLElement | null): boolean {
-  if (!parent) {
-    return true;
-  }
-
-  if (parent.closest("#profinsight-root")) {
-    return true;
-  }
-
-  const tagName = parent.tagName.toLowerCase();
-
-  if (
-    tagName === "script" ||
-    tagName === "style" ||
-    tagName === "noscript" ||
-    tagName === "textarea"
-  ) {
-    return true;
-  }
-
-  if (parent.closest(".profinsight-name")) {
-    return true;
-  }
-
-  return false;
-}
-
 async function showCardForNode(node: HTMLElement) {
   const name = node.dataset.profinsightName ?? "";
-  let info = professorData[name];
+  const cacheKey = name.toLowerCase().trim();
 
-  try {
-    const apiInfo = await fetchProfessorInfo("Cal Poly Pomona", name);
-    if (apiInfo) {
-      info = apiInfo;
+  let info: ProfessorInfo | undefined = professorData[name];
+
+  if (professorInfoCache.has(cacheKey)) {
+    info = professorInfoCache.get(cacheKey) ?? undefined;
+  } else {
+    try {
+      const apiInfo = await fetchProfessorInfo("Cal Poly Pomona", name);
+      professorInfoCache.set(cacheKey, apiInfo);
+      if (apiInfo) {
+        info = apiInfo;
+      }
+    } catch (error) {
+      console.error("Failed to fetch professor info from API:", error);
+      professorInfoCache.set(cacheKey, null);
     }
-  } catch (error) {
-    console.error("Failed to fetch professor info from API:", error);
   }
 
   if (!info) {
@@ -175,7 +332,7 @@ function bindHoverEvents(scope: ParentNode): void {
     node.addEventListener("mouseenter", () => {
       isNameHovered = true;
       clearHideTimer();
-      showCardForNode(node);
+      void showCardForNode(node);
     });
 
     node.addEventListener("mouseleave", () => {
@@ -191,107 +348,43 @@ function bindHoverEvents(scope: ParentNode): void {
       event.stopPropagation();
       isNameHovered = true;
       clearHideTimer();
-      showCardForNode(node);
+      void showCardForNode(node);
     });
   });
 }
 
-function replaceProfessorNamesInTextNode(textNode: Text): void {
-  const parent = textNode.parentElement;
-
-  if (shouldSkipNode(parent)) {
-    return;
-  }
-
-  const text = textNode.textContent ?? "";
-
-  if (!text.trim()) {
-    return;
-  }
-
-  let hasMatch = false;
-
-  for (const name of Object.keys(professorData)) {
-    const regex = new RegExp(`\\b${escapeRegExp(name)}\\b`);
-
-    if (regex.test(text)) {
-      hasMatch = true;
-      break;
-    }
-  }
-
-  if (!hasMatch) {
-    return;
-  }
-
-  const fragment = document.createDocumentFragment();
-  let remainingText = text;
-
-  while (remainingText.length > 0) {
-    let earliestIndex = -1;
-    let earliestName = "";
-
-    for (const name of Object.keys(professorData)) {
-      const regex = new RegExp(`\\b${escapeRegExp(name)}\\b`);
-      const match = remainingText.match(regex);
-
-      if (!match || match.index === undefined) {
-        continue;
-      }
-
-      if (earliestIndex === -1 || match.index < earliestIndex) {
-        earliestIndex = match.index;
-        earliestName = name;
-      }
-    }
-
-    if (earliestIndex === -1) {
-      fragment.appendChild(document.createTextNode(remainingText));
-      break;
-    }
-
-    if (earliestIndex > 0) {
-      fragment.appendChild(
-        document.createTextNode(remainingText.slice(0, earliestIndex))
-      );
-    }
-
-    const span = document.createElement("span");
-    span.className = "profinsight-name";
-    span.dataset.profinsightName = earliestName;
-    span.textContent = earliestName;
-    fragment.appendChild(span);
-
-    remainingText = remainingText.slice(earliestIndex + earliestName.length);
-  }
-
-  textNode.parentNode?.replaceChild(fragment, textNode);
-}
-
 function scanPage(): void {
-  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-  const textNodes: Text[] = [];
+  const pageText = document.body.textContent?.toUpperCase() ?? "";
 
-  while (walker.nextNode()) {
-    const current = walker.currentNode;
-
-    if (current instanceof Text) {
-      textNodes.push(current);
-    }
+  if (!pageText.includes("SEARCH RESULTS")) {
+    return;
   }
 
-  textNodes.forEach((textNode) => {
-    replaceProfessorNamesInTextNode(textNode);
-  });
-
+  scanForProfessorNames();
   bindHoverEvents(document);
 }
 
+let scanTimer: number | null = null;
+
+function scheduleScan(): void {
+  if (scanTimer !== null) {
+    window.clearTimeout(scanTimer);
+  }
+
+  scanTimer = window.setTimeout(() => {
+    scanPage();
+  }, 150);
+}
+
 const observer = new MutationObserver(() => {
-  scanPage();
+  scheduleScan();
 });
 
 scanPage();
+
+window.setTimeout(scanPage, 500);
+window.setTimeout(scanPage, 1500);
+window.setTimeout(scanPage, 3000);
 
 observer.observe(document.body, {
   childList: true,

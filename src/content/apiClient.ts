@@ -28,9 +28,21 @@ export async function fetchProfessorInfo(
     return prof.name?.trim().toLowerCase() === normalizedName;
   }) as ProfessorInfo | undefined;
 
-  if (!result || !(result as any).found) {
-    return null;
-  }
+  if (!result) {
+  return null;
+}
+
+if (!(result as any).found) {
+  return {
+    name: professorName,
+    course: "No Reviews Found",
+    rating: 0,
+    difficulty: 0,
+    summary: "No Reviews Found",
+    reviewUrl: "",
+    compareOptions: []
+  };
+}
 
   return result;
 }

@@ -1,7 +1,11 @@
 .profinsight-name {
   cursor: pointer !important;
+}
+
+.profinsight-instructor-cell .profinsight-name {
   text-decoration: underline !important;
   text-underline-offset: 2px !important;
   font-weight: 700 !important;
   color: #2563eb !important;
 }
+

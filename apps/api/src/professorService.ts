@@ -1,18 +1,5 @@
-import { schools } from "./mockProfessorData.js";
-import type { ProfessorResult, ProfessorsResponse } from "./types.js";
-
-function normalize(value: string): string {
-  return value.trim().toLowerCase().replace(/\s+/g, " ");
-}
-
-function findSchool(input: string) {
-  const normalized = normalize(input);
-  return schools.find(
-    (school) =>
-      normalize(school.displayName) === normalized ||
-      school.aliases.some((alias) => normalize(alias) === normalized)
-  );
-}
+import type { ProfessorsResponse, ProfessorResult } from "./types.js";
+import { lookupProfessorFromRmp } from "./rmpProvider.js";
 
 function notFoundProfessor(name: string): ProfessorResult {
   return {
@@ -23,19 +10,24 @@ function notFoundProfessor(name: string): ProfessorResult {
 }
 
 export async function lookupProfessors(
-  schoolInput: string,
+  school: string,
   professorNames: string[]
 ): Promise<ProfessorsResponse> {
-  const school = findSchool(schoolInput);
   const response: ProfessorsResponse = {
-    schoolFound: school?.displayName ?? null,
+    schoolFound: school,
     professors: {}
   };
 
   for (const requestedName of professorNames) {
-    const key = normalize(requestedName);
-    const match = school?.professors[key];
-    response.professors[requestedName] = match ?? notFoundProfessor(requestedName);
+    try {
+      response.professors[requestedName] = await lookupProfessorFromRmp(
+        school,
+        requestedName
+      );
+    } catch (error) {
+      console.error(`Failed to lookup ${requestedName}:`, error);
+      response.professors[requestedName] = notFoundProfessor(requestedName);
+    }
   }
 
   return response;
