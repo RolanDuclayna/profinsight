@@ -380,11 +380,23 @@ const observer = new MutationObserver(() => {
   scheduleScan();
 });
 
+document.addEventListener(
+  "click",
+  () => {
+    window.setTimeout(scanPage, 50);
+    window.setTimeout(scanPage, 250);
+    window.setTimeout(scanPage, 750);
+  },
+  true
+);
+
 scanPage();
 
-window.setTimeout(scanPage, 500);
+window.setTimeout(scanPage, 250);
+window.setTimeout(scanPage, 750);
 window.setTimeout(scanPage, 1500);
 window.setTimeout(scanPage, 3000);
+window.setTimeout(scanPage, 5000);
 
 observer.observe(document.body, {
   childList: true,

@@ -116,22 +116,42 @@ export default function HoverCard(props: HoverCardProps) {
             marginTop: "14px"
           }}
         >
-          <a
-            href={props.professor.reviewUrl}
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              display: "inline-block",
-              background: "#2563eb",
-              color: "#ffffff",
-              padding: "8px 12px",
-              borderRadius: "8px",
-              textDecoration: "none",
-              fontSize: "14px"
-            }}
-          >
-            Read reviews
-          </a>
+          {props.professor.reviewUrl ? (
+  <a
+    href={props.professor.reviewUrl}
+    target="_blank"
+    rel="noreferrer"
+    style={{
+      display: "inline-block",
+      background: "#2563eb",
+      color: "#ffffff",
+      padding: "8px 12px",
+      borderRadius: "8px",
+      textDecoration: "none",
+      fontSize: "14px"
+    }}
+  >
+    Read reviews
+  </a>
+) : (
+  <button
+    type="button"
+    disabled
+    style={{
+      display: "inline-block",
+      background: "#9ca3af",
+      color: "#ffffff",
+      padding: "8px 12px",
+      borderRadius: "8px",
+      border: "none",
+      fontSize: "14px",
+      cursor: "not-allowed",
+      opacity: 0.7
+    }}
+  >
+    Read reviews
+  </button>
+)}
 
           <button
             onClick={handleAddToSchedule}
