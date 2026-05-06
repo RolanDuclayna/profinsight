@@ -7,8 +7,8 @@ export type ComparisonProfessor = {
 
 export type ProfessorInfo = {
   name: string;
-  rating: number;
-  difficulty: number;
+  rating: number | null;
+  difficulty: number | null;
   summary: string;
   reviewUrl: string;
   course: string;

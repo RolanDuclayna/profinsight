@@ -1,0 +1,171 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+
+.popup-page {
+  width: 360px;
+  padding: 16px;
+}
+
+.popup-page h1 {
+  font-size: 20px;
+  margin: 0 0 12px;
+}
+
+.popup-page h2 {
+  font-size: 16px;
+  margin: 0 0 10px;
+}
+
+.popup-page p {
+  margin: 4px 0;
+}
+
+.class-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.class-card {
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.class-card button,
+.clear-button {
+  margin-top: 8px;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.clear-button {
+  margin-bottom: 10px;
+}
+.class-card {
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 10px;
+  background: white;
+}
+
+.class-main-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.class-crn {
+  margin: 4px 0 0;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.class-code {
+  font-size: 15px;
+}
+
+.class-time {
+  margin: 6px 0;
+  color: #4b5563;
+  font-size: 13px;
+}
+
+.class-room {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.professor-link {
+  display: inline-block;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.professor-link:hover {
+  text-decoration: underline;
+}
+
+.remove-button {
+  padding: 5px 8px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.popup-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.copy-button,
+.clear-button {
+  padding: 7px 10px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.ai-button {
+  padding: 7px 10px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.ai-summary-box {
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  background: #eff6ff;
+  font-size: 13px;
+}
+
+.ai-summary-box p {
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+}
+
+.dpr-section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.helper-text {
+  margin: 4px 0 8px;
+  color: #4b5563;
+  font-size: 13px;
+}
+
+.dpr-upload-label {
+  display: inline-block;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.dpr-file-input {
+  display: none;
+}
+
+.ai-summary-box {
+  max-height: 160px;
+  overflow-y: auto;
+}
